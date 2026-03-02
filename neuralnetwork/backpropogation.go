@@ -7,29 +7,20 @@ import (
 	"github.com/ThakurMayank5/gonn/activation"
 )
 
-// This uses mini batch gradient descent
-func (model *Model) BackpropagateBatch(batchInputs [][]float64, batchTargets [][]float64) error {
+// computed gradients
+type GradientBuffer struct {
+	GradW [][][]float64
+	GradB [][]float64
+}
 
-	oldWeights := model.NeuralNetwork.WeightsAndBiases.Weights
+// BackpropagateBatch computes gradients for the entire mini-batch and returns them
+func (model *Model) BackpropagateBatch(batchInputs [][]float64, batchTargets [][]float64) (*GradientBuffer, error) {
 
-	newWeights := make([][][]float64, len(oldWeights))
+	numLayers := len(model.NeuralNetwork.WeightsAndBiases.Weights)
 
-	for l := range oldWeights {
-		newWeights[l] = make([][]float64, len(oldWeights[l]))
-
-		for j := range oldWeights[l] {
-			newWeights[l][j] = make([]float64, len(oldWeights[l][j]))
-			copy(newWeights[l][j], oldWeights[l][j])
-		}
-	}
-
-	oldBiases := model.NeuralNetwork.WeightsAndBiases.Biases
-
-	newBiases := make([][]float64, len(oldBiases))
-
-	for l := range oldBiases {
-		newBiases[l] = make([]float64, len(oldBiases[l]))
-		copy(newBiases[l], oldBiases[l])
+	grads := &GradientBuffer{
+		GradW: make([][][]float64, numLayers),
+		GradB: make([][]float64, numLayers),
 	}
 
 	batch_size := len(batchInputs)
@@ -45,7 +36,7 @@ func (model *Model) BackpropagateBatch(batchInputs [][]float64, batchTargets [][
 	z, a, predictions, err := model.PredictBatch(batchInputs, batchTargets)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Output Layer Backpropagation
@@ -57,7 +48,7 @@ func (model *Model) BackpropagateBatch(batchInputs [][]float64, batchTargets [][
 				activationDerivativeFunc := getActivationDerivative(model.NeuralNetwork.OutputLayer.ActivationFunction)
 
 				if activationDerivativeFunc == nil {
-					return fmt.Errorf("unsupported activation function for backpropagation: %s", model.NeuralNetwork.OutputLayer.ActivationFunction)
+					return nil, fmt.Errorf("unsupported activation function for backpropagation: %s", model.NeuralNetwork.OutputLayer.ActivationFunction)
 				}
 
 				// For non-softmax activations, we need to multiply by the derivative of the activation function
@@ -106,17 +97,8 @@ func (model *Model) BackpropagateBatch(batchInputs [][]float64, batchTargets [][
 		gradB[j] *= scale
 	}
 
-	for j := 0; j < outputNeurons; j++ {
-
-		for k := 0; k < prevNeurons; k++ {
-
-			newWeights[lastLayer][j][k] -=
-				model.TrainingConfig.LearningRate * gradW[j][k]
-		}
-
-		newBiases[lastLayer][j] -=
-			model.TrainingConfig.LearningRate * gradB[j]
-	}
+	grads.GradW[lastLayer] = gradW
+	grads.GradB[lastLayer] = gradB
 
 	// Backprop For Hidden Layers
 
@@ -168,7 +150,7 @@ func (model *Model) BackpropagateBatch(batchInputs [][]float64, batchTargets [][
 				activationDerivativeFunc := getActivationDerivative(model.NeuralNetwork.Layers[l].ActivationFunction)
 
 				if activationDerivativeFunc == nil {
-					return fmt.Errorf("unsupported activation function for backpropagation: %s", model.NeuralNetwork.Layers[l].ActivationFunction)
+					return nil, fmt.Errorf("unsupported activation function for backpropagation: %s", model.NeuralNetwork.Layers[l].ActivationFunction)
 				}
 
 				newDeltas[i][j] *= activationDerivativeFunc(z[i][l][j])
@@ -235,27 +217,12 @@ func (model *Model) BackpropagateBatch(batchInputs [][]float64, batchTargets [][
 
 		}
 
-		// Update weights and biases for layer l
-
-		for j := 0; j < currentLayerNeurons; j++ {
-
-			for k := 0; k < prevNeurons; k++ {
-
-				newWeights[l][j][k] -=
-					model.TrainingConfig.LearningRate * gradWHidden[j][k]
-			}
-
-			newBiases[l][j] -=
-				model.TrainingConfig.LearningRate * gradBHidden[j]
-		}
+		grads.GradW[l] = gradWHidden
+		grads.GradB[l] = gradBHidden
 
 	}
 
-	// replace the model weights and biases with the new values
-	model.NeuralNetwork.WeightsAndBiases.Weights = newWeights
-	model.NeuralNetwork.WeightsAndBiases.Biases = newBiases
-
-	return nil
+	return grads, nil
 
 }
 

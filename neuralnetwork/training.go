@@ -2,9 +2,10 @@ package neuralnetwork
 
 import (
 	"fmt"
-	"github.com/ThakurMayank5/gonn/dataset"
 	"math/rand"
 	"time"
+
+	"github.com/ThakurMayank5/gonn/dataset"
 )
 
 func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) error {
@@ -59,8 +60,14 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 				batchTargets[i] = training.Outputs[idx]
 			}
 
-			// Backward Propagation with weight/bias updates for the entire batch
-			err := model.BackpropagateBatch(batchInputs, batchTargets)
+			// Backward Propagation — compute gradients
+			grads, err := model.BackpropagateBatch(batchInputs, batchTargets)
+			if err != nil {
+				return err
+			}
+
+			// Apply gradients
+			err = model.ApplyGradients(grads)
 			if err != nil {
 				return err
 			}

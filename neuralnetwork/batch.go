@@ -8,6 +8,7 @@ import (
 )
 
 // z is pre activation values, a is post activation values, predictions is the final output
+// shape of z and a is [batch_size][num_layers][neurons_in_layer]
 func (model *Model) PredictBatch(batchInputs [][]float64, batchTargets [][]float64) (z [][][]float64, a [][][]float64, predictions [][]float64, err error) {
 
 	batchSize := len(batchInputs)
