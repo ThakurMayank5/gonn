@@ -16,6 +16,18 @@ type LossFunction string
 type Initialization string
 
 const (
+	SGD      Optimizer = "sgd"
+	MOMENTUM Optimizer = "momentum"
+	NESTEROV Optimizer = "nesterov"
+	ADAGRAD  Optimizer = "adagrad"
+	RMSPROP  Optimizer = "rmsprop"
+	ADAM     Optimizer = "adam"
+	ADAMW    Optimizer = "adamw"
+	AMSGRAD  Optimizer = "amsgrad"
+	LAMB     Optimizer = "lamb"
+)
+
+const (
 	XavierUniformInitializer  Initialization = "xavier_uniform"
 	XavierNormalInitializer   Initialization = "xavier_normal"
 	KaimingUniformInitializer Initialization = "kaiming_uniform"
@@ -58,12 +70,27 @@ type Layer struct {
 	Initialization     Initialization
 }
 
+// computed gradients
+type GradientBuffer struct {
+	GradW [][][]float64
+	GradB [][]float64
+}
+
+type OptimizerState struct {
+	VelocitiesW [][][]float64 // For momentum-based optimizers
+	VelocitiesB [][]float64
+
+	CacheW [][][]float64 // For adaptive optimizers
+	CacheB [][]float64
+}
+
 // NeuralNetwork represents the neural network architecture
 type NeuralNetwork struct {
 	InputLayer       InputLayer
 	Layers           []Layer
 	OutputLayer      OutputLayer
 	WeightsAndBiases ModelWeightsAndBiases
+	OptimizerState   OptimizerState
 }
 
 // Model represents the complete model with network and training config

@@ -16,8 +16,9 @@ func (model *Model) ApplyGradients(grads *GradientBuffer) error {
 		return fmt.Errorf("no gradients to apply")
 	}
 
-	if model.TrainingConfig.Optimizer == "sgd" {
-
+	switch model.TrainingConfig.Optimizer {
+	// Vanilla SGD
+	case SGD:
 		for l := range grads.GradW {
 			for j := range grads.GradW[l] {
 				for k := range grads.GradW[l][j] {
@@ -26,8 +27,9 @@ func (model *Model) ApplyGradients(grads *GradientBuffer) error {
 				biases[l][j] -= lr * grads.GradB[l][j]
 			}
 		}
-	} else {
+	default:
 		return fmt.Errorf("unsupported optimizer: %s", model.TrainingConfig.Optimizer)
 	}
+
 	return nil
 }

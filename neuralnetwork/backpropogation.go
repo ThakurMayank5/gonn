@@ -7,12 +7,6 @@ import (
 	"github.com/ThakurMayank5/gonn/activation"
 )
 
-// computed gradients
-type GradientBuffer struct {
-	GradW [][][]float64
-	GradB [][]float64
-}
-
 // BackpropagateBatch computes gradients for the entire mini-batch and returns them
 func (model *Model) BackpropagateBatch(batchInputs [][]float64, batchTargets [][]float64) (*GradientBuffer, error) {
 
