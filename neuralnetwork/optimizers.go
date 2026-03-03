@@ -19,6 +19,26 @@ func (model *Model) ApplyGradients(grads *GradientBuffer) error {
 		return fmt.Errorf("no gradients to apply")
 	}
 
+	// Applying Weight Decay if specified
+	// Using L2 regularization
+	// For Adam no weight decay
+	// for AdamW decoupled weight decay
+	if model.TrainingConfig.WeightDecay > 0 &&
+		model.TrainingConfig.Optimizer != ADAM &&
+		model.TrainingConfig.Optimizer != ADAMW {
+
+		lambda := model.TrainingConfig.WeightDecay
+
+		for l := range grads.GradW {
+			for j := range grads.GradW[l] {
+				for k := range grads.GradW[l][j] {
+					grads.GradW[l][j][k] +=
+						lambda * weights[l][j][k]
+				}
+			}
+		}
+	}
+
 	switch model.TrainingConfig.Optimizer {
 	// Vanilla SGD
 	case SGD:
@@ -129,7 +149,7 @@ func (model *Model) ApplyGradients(grads *GradientBuffer) error {
 			}
 		}
 
-	case ADAM:
+	case ADAM, ADAMW:
 
 		// m = beta1*m + (1-beta1)*grad
 		// v = beta2*v + (1-beta2)*grad^2
@@ -154,12 +174,21 @@ func (model *Model) ApplyGradients(grads *GradientBuffer) error {
 					squaredGradW[l][j][k] = beta2*squaredGradW[l][j][k] + (1-beta2)*grads.GradW[l][j][k]*grads.GradW[l][j][k]
 					m_hat := velocityW[l][j][k] / (1 - math.Pow(beta1, t))
 					v_hat := squaredGradW[l][j][k] / (1 - math.Pow(beta2, t))
+
+					// decoupled weight decay for AdamW
+					if model.TrainingConfig.Optimizer == ADAMW && model.TrainingConfig.WeightDecay > 0 {
+						lambda := model.TrainingConfig.WeightDecay
+						weights[l][j][k] -= lr * lambda * weights[l][j][k]
+					}
+
 					weights[l][j][k] -= lr * m_hat / (math.Sqrt(v_hat) + epsilon)
 				}
 				velocityB[l][j] = beta1*velocityB[l][j] + (1-beta1)*grads.GradB[l][j]
 				squaredGradB[l][j] = beta2*squaredGradB[l][j] + (1-beta2)*grads.GradB[l][j]*grads.GradB[l][j]
 				m_hat_b := velocityB[l][j] / (1 - math.Pow(beta1, t))
 				v_hat_b := squaredGradB[l][j] / (1 - math.Pow(beta2, t))
+
+				// no weight decay for biases
 				biases[l][j] -= lr * m_hat_b / (math.Sqrt(v_hat_b) + epsilon)
 			}
 		}

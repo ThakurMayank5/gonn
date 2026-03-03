@@ -20,12 +20,12 @@ const (
 	MOMENTUM     Optimizer = "momentum"
 	EMA_MOMENTUM Optimizer = "ema_momentum"
 	NESTEROV     Optimizer = "nesterov"
-	ADAGRAD      Optimizer = "adagrad"
-	RMSPROP      Optimizer = "rmsprop"
-	ADAM         Optimizer = "adam"
-	ADAMW        Optimizer = "adamw"
-	AMSGRAD      Optimizer = "amsgrad"
-	LAMB         Optimizer = "lamb"
+	// ADAGRAD      Optimizer = "adagrad"
+	RMSPROP Optimizer = "rmsprop"
+	ADAM    Optimizer = "adam"
+	ADAMW   Optimizer = "adamw"
+	// AMSGRAD      Optimizer = "amsgrad"
+	// LAMB         Optimizer = "lamb"
 )
 
 const (
@@ -48,6 +48,13 @@ type OutputLayer struct {
 	Initialization     Initialization
 }
 
+// Optimizer	Behavior
+// SGD	 L2 to gradient
+// Momentum	 L2 to gradient
+// RMSProp	 decoupled
+// Adam	No WeightDecay
+// AdamW	Decoupled shrink
+
 // TrainingConfig represents training hyperparameters
 type TrainingConfig struct {
 	Epochs          int
@@ -59,9 +66,11 @@ type TrainingConfig struct {
 	Beta            float64 // For momentum and Adam optimizers
 
 	// For Adam and AdamW
-	Beta1 float64
-	Beta2 float64
+	Beta1   float64
+	Beta2   float64
 	Epsilon float64
+
+	WeightDecay float64 // For AdamW and L2 regularization
 }
 
 // ModelWeightsAndBiases stores the model parameters

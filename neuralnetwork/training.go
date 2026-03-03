@@ -65,7 +65,12 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 			model.TrainingConfig.Beta = 0.9 // Default momentum factor
 		}
 
-	case ADAM:
+	case ADAM, ADAMW:
+
+		if model.TrainingConfig.WeightDecay == 0 && model.TrainingConfig.Optimizer == ADAMW {
+			return fmt.Errorf("weight decay must be set for AdamW optimizer")
+		}
+
 		// Initialize velocity and cache for Adam
 		VelocityW := make([][][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights))
 		VelocityB := make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases))
