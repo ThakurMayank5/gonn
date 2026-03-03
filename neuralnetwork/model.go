@@ -111,7 +111,7 @@ type OptimizerState struct {
 
 type TrainingState struct {
 	BestValLoss     float64
-	PatienceCounter int
+	LRPatienceCounter int
 }
 
 // NeuralNetwork represents the neural network architecture

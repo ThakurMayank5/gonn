@@ -31,8 +31,8 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 	// LR scheduler initialization
 	if model.TrainingConfig.ReduceOnPlateau {
 		model.NeuralNetwork.TrainingState = &TrainingState{
-			BestValLoss:     math.Inf(1), // Initialize to positive infinity
-			PatienceCounter: 0,
+			BestValLoss:       math.Inf(1), // Initialize to positive infinity
+			LRPatienceCounter: 0,
 		}
 	}
 
@@ -207,13 +207,13 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 			if validationLoss < model.NeuralNetwork.TrainingState.BestValLoss {
 
 				model.NeuralNetwork.TrainingState.BestValLoss = validationLoss
-				model.NeuralNetwork.TrainingState.PatienceCounter = 0
+				model.NeuralNetwork.TrainingState.LRPatienceCounter = 0
 
 			} else {
 
-				model.NeuralNetwork.TrainingState.PatienceCounter++
+				model.NeuralNetwork.TrainingState.LRPatienceCounter++
 
-				if model.NeuralNetwork.TrainingState.PatienceCounter >= model.TrainingConfig.LRPatience {
+				if model.NeuralNetwork.TrainingState.LRPatienceCounter >= model.TrainingConfig.LRPatience {
 
 					oldLR := model.TrainingConfig.LearningRate
 
@@ -226,7 +226,7 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 
 					model.TrainingConfig.LearningRate = newLR
 
-					model.NeuralNetwork.TrainingState.PatienceCounter = 0
+					model.NeuralNetwork.TrainingState.LRPatienceCounter = 0
 
 					fmt.Printf("Learning rate reduced from %.6f to %.6f due to plateau in validation loss\n", oldLR, newLR)
 
