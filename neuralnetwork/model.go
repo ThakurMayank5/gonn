@@ -16,15 +16,16 @@ type LossFunction string
 type Initialization string
 
 const (
-	SGD      Optimizer = "sgd"
-	MOMENTUM Optimizer = "momentum"
-	NESTEROV Optimizer = "nesterov"
-	ADAGRAD  Optimizer = "adagrad"
-	RMSPROP  Optimizer = "rmsprop"
-	ADAM     Optimizer = "adam"
-	ADAMW    Optimizer = "adamw"
-	AMSGRAD  Optimizer = "amsgrad"
-	LAMB     Optimizer = "lamb"
+	SGD          Optimizer = "sgd"
+	MOMENTUM     Optimizer = "momentum"
+	EMA_MOMENTUM Optimizer = "ema_momentum"
+	NESTEROV     Optimizer = "nesterov"
+	ADAGRAD      Optimizer = "adagrad"
+	RMSPROP      Optimizer = "rmsprop"
+	ADAM         Optimizer = "adam"
+	ADAMW        Optimizer = "adamw"
+	AMSGRAD      Optimizer = "amsgrad"
+	LAMB         Optimizer = "lamb"
 )
 
 const (
@@ -55,6 +56,7 @@ type TrainingConfig struct {
 	LossFunction    LossFunction
 	BatchSize       int
 	ValidationSplit float64
+	Beta            float64 // For momentum and Adam optimizers
 }
 
 // ModelWeightsAndBiases stores the model parameters
@@ -90,7 +92,7 @@ type NeuralNetwork struct {
 	Layers           []Layer
 	OutputLayer      OutputLayer
 	WeightsAndBiases ModelWeightsAndBiases
-	OptimizerState   OptimizerState
+	OptimizerState   *OptimizerState
 }
 
 // Model represents the complete model with network and training config

@@ -10,6 +10,43 @@ import (
 
 func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) error {
 
+	// set optimizers and other training parameters
+	if model.TrainingConfig.Optimizer == "" {
+		model.TrainingConfig.Optimizer = SGD
+	}
+
+	switch model.TrainingConfig.Optimizer {
+	case SGD:
+	// No additional setup needed for vanilla SGD
+	case MOMENTUM, EMA_MOMENTUM:
+		// Initialize velocity buffers for momentum adn exponential moving average momentum optimizers
+
+		VelocityW := make([][][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights))
+		VelocityB := make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases))
+
+		for l := range model.NeuralNetwork.WeightsAndBiases.Weights {
+			VelocityW[l] = make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights[l]))
+			for j := range model.NeuralNetwork.WeightsAndBiases.Weights[l] {
+				VelocityW[l][j] = make([]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights[l][j]))
+			}
+			VelocityB[l] = make([]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases[l]))
+		}
+
+		// initial velocities are zero
+
+		model.NeuralNetwork.OptimizerState = &OptimizerState{
+			VelocitiesW: VelocityW,
+			VelocitiesB: VelocityB,
+		}
+
+		if model.TrainingConfig.Beta == 0 {
+			model.TrainingConfig.Beta = 0.9 // Default momentum factor
+		}
+
+	default:
+		return fmt.Errorf("unsupported optimizer: %s", model.TrainingConfig.Optimizer)
+	}
+
 	// initialize a random seed for further use
 	rand.Seed(time.Now().UnixNano())
 
