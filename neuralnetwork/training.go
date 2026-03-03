@@ -2,6 +2,7 @@ package neuralnetwork
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"time"
 
@@ -25,6 +26,14 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 
 	if len(training.Inputs[0]) != model.NeuralNetwork.InputLayer.Neurons {
 		return fmt.Errorf("input data does not match the number of neurons in the input layer")
+	}
+
+	// LR scheduler initialization
+	if model.TrainingConfig.ReduceOnPlateau {
+		model.NeuralNetwork.TrainingState = &TrainingState{
+			BestValLoss:     math.Inf(1), // Initialize to positive infinity
+			PatienceCounter: 0,
+		}
 	}
 
 	// Dropouts validation
@@ -192,6 +201,38 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 			return err
 		}
 		fmt.Printf("\nValidation Loss: %.4f\n", validationLoss)
+
+		if model.TrainingConfig.ReduceOnPlateau {
+
+			if validationLoss < model.NeuralNetwork.TrainingState.BestValLoss {
+
+				model.NeuralNetwork.TrainingState.BestValLoss = validationLoss
+				model.NeuralNetwork.TrainingState.PatienceCounter = 0
+
+			} else {
+
+				model.NeuralNetwork.TrainingState.PatienceCounter++
+
+				if model.NeuralNetwork.TrainingState.PatienceCounter >= model.TrainingConfig.LRPatience {
+
+					oldLR := model.TrainingConfig.LearningRate
+
+					newLR := model.TrainingConfig.LearningRate *
+						model.TrainingConfig.LRFactor
+
+					if newLR < model.TrainingConfig.MinLR {
+						newLR = model.TrainingConfig.MinLR
+					}
+
+					model.TrainingConfig.LearningRate = newLR
+
+					model.NeuralNetwork.TrainingState.PatienceCounter = 0
+
+					fmt.Printf("Learning rate reduced from %.6f to %.6f due to plateau in validation loss\n", oldLR, newLR)
+
+				}
+			}
+		}
 
 	}
 

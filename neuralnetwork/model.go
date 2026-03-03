@@ -71,6 +71,12 @@ type TrainingConfig struct {
 	Epsilon float64
 
 	WeightDecay float64 // For AdamW and L2 regularization
+
+	// LR Scheduler Parameters for ReduceLROnPlateau
+	ReduceOnPlateau bool
+	LRFactor        float64
+	LRPatience      int
+	MinLR           float64
 }
 
 // ModelWeightsAndBiases stores the model parameters
@@ -103,6 +109,11 @@ type OptimizerState struct {
 	Timestep int // For Adam optimizer
 }
 
+type TrainingState struct {
+	BestValLoss     float64
+	PatienceCounter int
+}
+
 // NeuralNetwork represents the neural network architecture
 type NeuralNetwork struct {
 	InputLayer       InputLayer
@@ -113,6 +124,8 @@ type NeuralNetwork struct {
 
 	// Mask[batch_size][layer][neuron] = true if neuron is active, false if dropped out
 	DropoutMasks [][][]bool // For storing dropout masks during training
+
+	TrainingState *TrainingState
 }
 
 // Model represents the complete model with network and training config
