@@ -129,6 +129,41 @@ func (model *Model) ApplyGradients(grads *GradientBuffer) error {
 			}
 		}
 
+	case ADAM:
+
+		// m = beta1*m + (1-beta1)*grad
+		// v = beta2*v + (1-beta2)*grad^2
+		// m_hat = m / (1 - beta1^t)
+		// v_hat = v / (1 - beta2^t)
+		// param -= lr * m_hat / (sqrt(v_hat) + epsilon)
+
+		squaredGradW := model.NeuralNetwork.OptimizerState.CacheW
+		squaredGradB := model.NeuralNetwork.OptimizerState.CacheB
+		velocityW := model.NeuralNetwork.OptimizerState.VelocitiesW
+		velocityB := model.NeuralNetwork.OptimizerState.VelocitiesB
+		beta1 := model.TrainingConfig.Beta1
+		beta2 := model.TrainingConfig.Beta2
+		epsilon := model.TrainingConfig.Epsilon
+		model.NeuralNetwork.OptimizerState.Timestep++
+		t := float64(model.NeuralNetwork.OptimizerState.Timestep)
+
+		for l := range grads.GradW {
+			for j := range grads.GradW[l] {
+				for k := range grads.GradW[l][j] {
+					velocityW[l][j][k] = beta1*velocityW[l][j][k] + (1-beta1)*grads.GradW[l][j][k]
+					squaredGradW[l][j][k] = beta2*squaredGradW[l][j][k] + (1-beta2)*grads.GradW[l][j][k]*grads.GradW[l][j][k]
+					m_hat := velocityW[l][j][k] / (1 - math.Pow(beta1, t))
+					v_hat := squaredGradW[l][j][k] / (1 - math.Pow(beta2, t))
+					weights[l][j][k] -= lr * m_hat / (math.Sqrt(v_hat) + epsilon)
+				}
+				velocityB[l][j] = beta1*velocityB[l][j] + (1-beta1)*grads.GradB[l][j]
+				squaredGradB[l][j] = beta2*squaredGradB[l][j] + (1-beta2)*grads.GradB[l][j]*grads.GradB[l][j]
+				m_hat_b := velocityB[l][j] / (1 - math.Pow(beta1, t))
+				v_hat_b := squaredGradB[l][j] / (1 - math.Pow(beta2, t))
+				biases[l][j] -= lr * m_hat_b / (math.Sqrt(v_hat_b) + epsilon)
+			}
+		}
+
 	default:
 		return fmt.Errorf("unsupported optimizer: %s", model.TrainingConfig.Optimizer)
 	}

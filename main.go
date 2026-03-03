@@ -69,7 +69,7 @@ func main() {
 		TrainingConfig: nn.TrainingConfig{
 			Epochs:       30,
 			LearningRate: 0.0005,
-			Optimizer:    nn.RMSPROP,
+			Optimizer:    nn.ADAM,
 			LossFunction: "categorical_crossentropy",
 			BatchSize:    128,
 		},

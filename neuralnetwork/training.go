@@ -65,7 +65,42 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 			model.TrainingConfig.Beta = 0.9 // Default momentum factor
 		}
 
-		
+	case ADAM:
+		// Initialize velocity and cache for Adam
+		VelocityW := make([][][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights))
+		VelocityB := make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases))
+		CacheW := make([][][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights))
+		CacheB := make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases))
+
+		for l := range model.NeuralNetwork.WeightsAndBiases.Weights {
+			VelocityW[l] = make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights[l]))
+			CacheW[l] = make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights[l]))
+			for j := range model.NeuralNetwork.WeightsAndBiases.Weights[l] {
+				VelocityW[l][j] = make([]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights[l][j]))
+				CacheW[l][j] = make([]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights[l][j]))
+			}
+			VelocityB[l] = make([]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases[l]))
+			CacheB[l] = make([]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases[l]))
+		}
+
+		if model.TrainingConfig.Beta1 == 0 {
+			model.TrainingConfig.Beta1 = 0.9 // Default beta1 for Adam
+		}
+		if model.TrainingConfig.Beta2 == 0 {
+			model.TrainingConfig.Beta2 = 0.999 // Default beta2 for Adam
+		}
+
+		if model.TrainingConfig.Epsilon == 0 {
+			model.TrainingConfig.Epsilon = 1e-8 // Default epsilon for Adam
+		}
+
+		model.NeuralNetwork.OptimizerState = &OptimizerState{
+			VelocitiesW: VelocityW,
+			VelocitiesB: VelocityB,
+			CacheW:      CacheW,
+			CacheB:      CacheB,
+			Timestep:    0,
+		}
 
 	default:
 		return fmt.Errorf("unsupported optimizer: %s", model.TrainingConfig.Optimizer)

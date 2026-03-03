@@ -57,6 +57,11 @@ type TrainingConfig struct {
 	BatchSize       int
 	ValidationSplit float64
 	Beta            float64 // For momentum and Adam optimizers
+
+	// For Adam and AdamW
+	Beta1 float64
+	Beta2 float64
+	Epsilon float64
 }
 
 // ModelWeightsAndBiases stores the model parameters
@@ -84,6 +89,8 @@ type OptimizerState struct {
 
 	CacheW [][][]float64 // For adaptive optimizers
 	CacheB [][]float64
+
+	Timestep int // For Adam optimizer
 }
 
 // NeuralNetwork represents the neural network architecture
