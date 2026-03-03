@@ -83,6 +83,9 @@ func main() {
 			LRFactor:        0.5,
 			LRPatience:      3,
 			MinLR:           1e-6,
+
+			EarlyStopping:         true,
+			EarlyStoppingPatience: 5,
 		},
 	}
 

@@ -77,6 +77,10 @@ type TrainingConfig struct {
 	LRFactor        float64
 	LRPatience      int
 	MinLR           float64
+
+	// Early Stopping Parameters
+	EarlyStopping         bool
+	EarlyStoppingPatience int
 }
 
 // ModelWeightsAndBiases stores the model parameters
@@ -110,8 +114,12 @@ type OptimizerState struct {
 }
 
 type TrainingState struct {
-	BestValLoss     float64
-	LRPatienceCounter int
+	BestValLoss          float64
+	LRPatienceCounter    int
+	EarlyStoppingCounter int
+
+	BestWeights [][][]float64
+	BestBiases  [][]float64
 }
 
 // NeuralNetwork represents the neural network architecture

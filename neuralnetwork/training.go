@@ -28,11 +28,19 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 		return fmt.Errorf("input data does not match the number of neurons in the input layer")
 	}
 
-	// LR scheduler initialization
-	if model.TrainingConfig.ReduceOnPlateau {
+	// Initialize TrainingState if either feature is enabled
+	if model.TrainingConfig.ReduceOnPlateau || model.TrainingConfig.EarlyStopping {
 		model.NeuralNetwork.TrainingState = &TrainingState{
-			BestValLoss:       math.Inf(1), // Initialize to positive infinity
-			LRPatienceCounter: 0,
+			BestValLoss:          math.Inf(1), // Initialize to positive infinity
+			LRPatienceCounter:    0,
+			EarlyStoppingCounter: 0,
+		}
+	}
+
+	// Early stopping validation
+	if model.TrainingConfig.EarlyStopping {
+		if model.TrainingConfig.EarlyStoppingPatience == 0 {
+			return fmt.Errorf("early stopping patience must be greater than 0")
 		}
 	}
 
@@ -202,36 +210,78 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 		}
 		fmt.Printf("\nValidation Loss: %.4f\n", validationLoss)
 
-		if model.TrainingConfig.ReduceOnPlateau {
+		if model.NeuralNetwork.TrainingState != nil {
 
-			if validationLoss < model.NeuralNetwork.TrainingState.BestValLoss {
+			// Check if validation loss improved
+			improved := validationLoss < model.NeuralNetwork.TrainingState.BestValLoss
 
+			if improved {
 				model.NeuralNetwork.TrainingState.BestValLoss = validationLoss
-				model.NeuralNetwork.TrainingState.LRPatienceCounter = 0
+			}
 
-			} else {
+			if model.TrainingConfig.EarlyStopping {
+				if improved {
+					model.NeuralNetwork.TrainingState.EarlyStoppingCounter = 0
 
-				model.NeuralNetwork.TrainingState.LRPatienceCounter++
+					// Save best weights and biases (deep copy)
+					bestWeights := make([][][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights))
+					bestBiases := make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases))
 
-				if model.NeuralNetwork.TrainingState.LRPatienceCounter >= model.TrainingConfig.LRPatience {
-
-					oldLR := model.TrainingConfig.LearningRate
-
-					newLR := model.TrainingConfig.LearningRate *
-						model.TrainingConfig.LRFactor
-
-					if newLR < model.TrainingConfig.MinLR {
-						newLR = model.TrainingConfig.MinLR
+					for l := range model.NeuralNetwork.WeightsAndBiases.Weights {
+						bestWeights[l] = make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights[l]))
+						for j := range model.NeuralNetwork.WeightsAndBiases.Weights[l] {
+							bestWeights[l][j] = make([]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights[l][j]))
+							copy(bestWeights[l][j], model.NeuralNetwork.WeightsAndBiases.Weights[l][j])
+						}
+						bestBiases[l] = make([]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases[l]))
+						copy(bestBiases[l], model.NeuralNetwork.WeightsAndBiases.Biases[l])
 					}
 
-					model.TrainingConfig.LearningRate = newLR
+					model.NeuralNetwork.TrainingState.BestWeights = bestWeights
+					model.NeuralNetwork.TrainingState.BestBiases = bestBiases
 
-					model.NeuralNetwork.TrainingState.LRPatienceCounter = 0
+				} else {
+					model.NeuralNetwork.TrainingState.EarlyStoppingCounter++
+					if model.NeuralNetwork.TrainingState.EarlyStoppingCounter >= model.TrainingConfig.EarlyStoppingPatience {
+						fmt.Printf("Early stopping triggered after %d epochs without improvement in validation loss\n", model.TrainingConfig.
+							EarlyStoppingPatience)
 
-					fmt.Printf("Learning rate reduced from %.6f to %.6f due to plateau in validation loss\n", oldLR, newLR)
+						// Restore best weights and biases before stopping
+						model.NeuralNetwork.WeightsAndBiases.Weights = model.NeuralNetwork.TrainingState.BestWeights
+						model.NeuralNetwork.WeightsAndBiases.Biases = model.NeuralNetwork.TrainingState.BestBiases
 
+						return nil
+					}
 				}
 			}
+
+			if model.TrainingConfig.ReduceOnPlateau {
+				if improved {
+					model.NeuralNetwork.TrainingState.LRPatienceCounter = 0
+				} else {
+					model.NeuralNetwork.TrainingState.LRPatienceCounter++
+
+					if model.NeuralNetwork.TrainingState.LRPatienceCounter >= model.TrainingConfig.LRPatience {
+
+						oldLR := model.TrainingConfig.LearningRate
+
+						newLR := model.TrainingConfig.LearningRate *
+							model.TrainingConfig.LRFactor
+
+						if newLR < model.TrainingConfig.MinLR {
+							newLR = model.TrainingConfig.MinLR
+						}
+
+						model.TrainingConfig.LearningRate = newLR
+
+						model.NeuralNetwork.TrainingState.LRPatienceCounter = 0
+
+						fmt.Printf("Learning rate reduced from %.6f to %.6f due to plateau in validation loss\n", oldLR, newLR)
+
+					}
+				}
+			}
+
 		}
 
 	}
