@@ -18,8 +18,8 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 	switch model.TrainingConfig.Optimizer {
 	case SGD:
 	// No additional setup needed for vanilla SGD
-	case MOMENTUM, EMA_MOMENTUM:
-		// Initialize velocity buffers for momentum adn exponential moving average momentum optimizers
+	case MOMENTUM, EMA_MOMENTUM, NESTEROV:
+		// Initialize velocity buffers for momentum, exponential moving average momentum optimizers and nesterov
 
 		VelocityW := make([][][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights))
 		VelocityB := make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases))
@@ -42,6 +42,30 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 		if model.TrainingConfig.Beta == 0 {
 			model.TrainingConfig.Beta = 0.9 // Default momentum factor
 		}
+
+	case RMSPROP:
+		// Initialize cache for RMSProp
+		CacheW := make([][][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights))
+		CacheB := make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases))
+
+		for l := range model.NeuralNetwork.WeightsAndBiases.Weights {
+			CacheW[l] = make([][]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights[l]))
+			for j := range model.NeuralNetwork.WeightsAndBiases.Weights[l] {
+				CacheW[l][j] = make([]float64, len(model.NeuralNetwork.WeightsAndBiases.Weights[l][j]))
+			}
+			CacheB[l] = make([]float64, len(model.NeuralNetwork.WeightsAndBiases.Biases[l]))
+		}
+
+		model.NeuralNetwork.OptimizerState = &OptimizerState{
+			CacheW: CacheW,
+			CacheB: CacheB,
+		}
+
+		if model.TrainingConfig.Beta == 0 {
+			model.TrainingConfig.Beta = 0.9 // Default momentum factor
+		}
+
+		
 
 	default:
 		return fmt.Errorf("unsupported optimizer: %s", model.TrainingConfig.Optimizer)
