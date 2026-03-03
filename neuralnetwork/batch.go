@@ -2,6 +2,7 @@ package neuralnetwork
 
 import (
 	"fmt"
+	"math/rand"
 
 	"github.com/ThakurMayank5/gonn/activation"
 	"github.com/ThakurMayank5/gonn/vectors"
@@ -14,6 +15,37 @@ func (model *Model) PredictBatch(batchInputs [][]float64, batchTargets [][]float
 	batchSize := len(batchInputs)
 
 	predictions = make([][]float64, batchSize)
+
+	// Clear previous dropout masks if any
+	model.NeuralNetwork.DropoutMasks = nil
+
+	// allocate memory and initialize dropout masks for the batch
+	model.NeuralNetwork.DropoutMasks = make([][][]bool, batchSize)
+
+	for b := 0; b < batchSize; b++ {
+		model.NeuralNetwork.DropoutMasks[b] =
+			make([][]bool, len(model.NeuralNetwork.Layers))
+
+		for l := range model.NeuralNetwork.Layers {
+			neurons := model.NeuralNetwork.Layers[l].Neurons
+			model.NeuralNetwork.DropoutMasks[b][l] =
+				make([]bool, neurons)
+
+			p := model.NeuralNetwork.Layers[l].DropoutRate
+
+			if p == 0 {
+				continue
+			}
+
+			for n := 0; n < neurons; n++ {
+				if rand.Float64() < p {
+					model.NeuralNetwork.DropoutMasks[b][l][n] = false
+				} else {
+					model.NeuralNetwork.DropoutMasks[b][l][n] = true
+				}
+			}
+		}
+	}
 
 	// Make each z[i] same size as bias size
 
@@ -75,6 +107,21 @@ func (model *Model) PredictBatch(batchInputs [][]float64, batchTargets [][]float
 
 					// Store pre-activation values for backpropagation
 					z[batch][i][j] = dotProduct + biases[i][j]
+
+					if i != len(weights)-1 {
+
+						p := model.NeuralNetwork.Layers[i].DropoutRate
+
+						if p > 0 {
+							keepProb := 1.0 - p
+
+							if model.NeuralNetwork.DropoutMasks[batch][i][j] {
+								newX[j] /= keepProb
+							} else {
+								newX[j] = 0
+							}
+						}
+					}
 
 					// Store post-activation values for backpropagation
 					a[batch][i][j] = newX[j]

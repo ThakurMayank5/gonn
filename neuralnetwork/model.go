@@ -84,6 +84,7 @@ type Layer struct {
 	Neurons            int
 	ActivationFunction activation.ActivationFunction
 	Initialization     Initialization
+	DropoutRate        float64
 }
 
 // computed gradients
@@ -109,6 +110,9 @@ type NeuralNetwork struct {
 	OutputLayer      OutputLayer
 	WeightsAndBiases ModelWeightsAndBiases
 	OptimizerState   *OptimizerState
+
+	// Mask[batch_size][layer][neuron] = true if neuron is active, false if dropped out
+	DropoutMasks [][][]bool // For storing dropout masks during training
 }
 
 // Model represents the complete model with network and training config

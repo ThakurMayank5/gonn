@@ -48,16 +48,19 @@ func main() {
 					Neurons:            256,
 					ActivationFunction: activ.ReLU,
 					Initialization:     nn.KaimingNormalInitializer,
+					DropoutRate:        0.3,
 				},
 				{
 					Neurons:            128,
 					ActivationFunction: activ.ReLU,
 					Initialization:     nn.KaimingNormalInitializer,
+					DropoutRate:        0.3,
 				},
 				{
 					Neurons:            64,
 					ActivationFunction: activ.ReLU,
 					Initialization:     nn.KaimingNormalInitializer,
+					DropoutRate:        0.2,
 				},
 			},
 			OutputLayer: nn.OutputLayer{
@@ -68,11 +71,14 @@ func main() {
 		},
 		TrainingConfig: nn.TrainingConfig{
 			Epochs:       30,
-			LearningRate: 0.0005,
+			LearningRate: 0.001,
 			Optimizer:    nn.ADAMW,
-			WeightDecay:  0.01,
+			Beta1:        0.9,
+			Beta2:        0.999,
+			Epsilon:      1e-8,
+			WeightDecay:  0.0001,
 			LossFunction: "categorical_crossentropy",
-			BatchSize:    128,
+			BatchSize:    64,
 		},
 	}
 

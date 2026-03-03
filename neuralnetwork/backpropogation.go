@@ -149,6 +149,15 @@ func (model *Model) BackpropagateBatch(batchInputs [][]float64, batchTargets [][
 
 				newDeltas[i][j] *= activationDerivativeFunc(z[i][l][j])
 
+				// Apply dropout mask (only if dropout was used)
+				p := model.NeuralNetwork.Layers[l].DropoutRate
+
+				if p > 0 {
+					if !model.NeuralNetwork.DropoutMasks[i][l][j] {
+						newDeltas[i][j] = 0
+					}
+				}
+
 			}
 
 		}

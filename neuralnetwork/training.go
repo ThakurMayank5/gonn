@@ -10,6 +10,31 @@ import (
 
 func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) error {
 
+	// initialize a random seed for further use
+	rand.Seed(time.Now().UnixNano())
+
+	// Dataset validation
+
+	if len(training.Inputs) == 0 || len(training.Outputs) == 0 {
+		return fmt.Errorf("training dataset is empty")
+	}
+
+	if len(training.Inputs) != len(training.Outputs) {
+		return fmt.Errorf("number of inputs and outputs must be the same")
+	}
+
+	if len(training.Inputs[0]) != model.NeuralNetwork.InputLayer.Neurons {
+		return fmt.Errorf("input data does not match the number of neurons in the input layer")
+	}
+
+	// Dropouts validation
+
+	for i, layer := range model.NeuralNetwork.Layers {
+		if layer.DropoutRate < 0 || layer.DropoutRate >= 1 {
+			return fmt.Errorf("invalid dropout rate for layer %d: must be in [0, 1)", i+1)
+		}
+	}
+
 	// set optimizers and other training parameters
 	if model.TrainingConfig.Optimizer == "" {
 		model.TrainingConfig.Optimizer = SGD
@@ -109,23 +134,6 @@ func (model *Model) Fit(training dataset.Dataset, validation dataset.Dataset) er
 
 	default:
 		return fmt.Errorf("unsupported optimizer: %s", model.TrainingConfig.Optimizer)
-	}
-
-	// initialize a random seed for further use
-	rand.Seed(time.Now().UnixNano())
-
-	// Dataset validation
-
-	if len(training.Inputs) == 0 || len(training.Outputs) == 0 {
-		return fmt.Errorf("training dataset is empty")
-	}
-
-	if len(training.Inputs) != len(training.Outputs) {
-		return fmt.Errorf("number of inputs and outputs must be the same")
-	}
-
-	if len(training.Inputs[0]) != model.NeuralNetwork.InputLayer.Neurons {
-		return fmt.Errorf("input data does not match the number of neurons in the input layer")
 	}
 
 	total_samples := len(training.Inputs)
