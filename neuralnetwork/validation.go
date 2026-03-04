@@ -11,7 +11,7 @@ func (model *Model) ForwardPassBatch(batchInputs [][]float64, batchTargets [][]f
 		input := batchInputs[i]
 		target := batchTargets[i]
 
-		output, err := model.NeuralNetwork.Predict(input)
+		output, err := model.NeuralNetwork.predict(input)
 		if err != nil {
 			return 0, err
 		}

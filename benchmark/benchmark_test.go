@@ -41,6 +41,7 @@ func setupModel() *nn.Model {
 	}
 
 	model.InitializeWeights()
+
 	return model
 }
 
@@ -59,7 +60,11 @@ func randomBatch(batchSize, inputSize, outputSize int) ([][]float64, [][]float64
 }
 
 func BenchmarkDenseForward(b *testing.B) {
+
 	model := setupModel()
+
+	model.SetInferenceMode(true)
+
 	input := make([]float64, 784)
 	for i := range input {
 		input[i] = rand.Float64()*2 - 1
@@ -67,7 +72,7 @@ func BenchmarkDenseForward(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		model.NeuralNetwork.Predict(input)
+		model.Predict(input)
 	}
 }
 

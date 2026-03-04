@@ -122,6 +122,15 @@ type TrainingState struct {
 	BestBiases  [][]float64
 }
 
+type InferenceState struct {
+	InferenceBuffer     [][]float64
+	ActivationFunctions []func(float64) float64
+	// stored row major wise
+	FlatWeights [][]float64 // contiguous weights per layer [neurons*inputSize], flat weights are cache friendly
+	Biases      [][]float64 // cached reference to biases
+	InputSizes  []int       // input dimension per layer
+}
+
 // NeuralNetwork represents the neural network architecture
 type NeuralNetwork struct {
 	InputLayer       InputLayer
@@ -136,10 +145,72 @@ type NeuralNetwork struct {
 	TrainingState *TrainingState
 }
 
-// Model represents the complete model with network and training config
+// Model represents the complete model with network and training config and inference state
 type Model struct {
 	NeuralNetwork  NeuralNetwork
 	TrainingConfig TrainingConfig
+	// Stores Buffers for inference to avoid repeated allocations
+	InferenceState *InferenceState
+
+	inferenceMode bool // If true, model is in inference mode
+}
+
+func (model *Model) initializeInferenceBuffer() {
+
+	if model.InferenceState == nil {
+		model.InferenceState = &InferenceState{}
+	}
+
+	weights := model.NeuralNetwork.WeightsAndBiases.Weights
+	biases := model.NeuralNetwork.WeightsAndBiases.Biases
+	numLayers := len(biases)
+
+	inf := model.InferenceState
+	inf.InferenceBuffer = make([][]float64, numLayers)
+	inf.ActivationFunctions = make([]func(float64) float64, numLayers)
+	inf.FlatWeights = make([][]float64, numLayers)
+	inf.Biases = biases
+	inf.InputSizes = make([]int, numLayers)
+
+	for i := range numLayers {
+
+		if i == numLayers-1 {
+			inf.InferenceBuffer[i] = make([]float64, model.NeuralNetwork.OutputLayer.Neurons)
+
+			// returns nil for Softmax
+			inf.ActivationFunctions[i] = activation.GetActivationFunction(model.NeuralNetwork.OutputLayer.ActivationFunction)
+		} else {
+			inf.InferenceBuffer[i] = make([]float64, model.NeuralNetwork.Layers[i].Neurons)
+
+			// returns nil for Softmax
+			inf.ActivationFunctions[i] = activation.GetActivationFunction(model.NeuralNetwork.Layers[i].ActivationFunction)
+		}
+
+		// Flatten weights into a single contiguous array per layer for cache-friendly access during inference
+		neurons := len(weights[i])
+		if neurons > 0 {
+			inputSize := len(weights[i][0])
+			inf.InputSizes[i] = inputSize
+			flat := make([]float64, neurons*inputSize)
+			for j := range neurons {
+				copy(flat[j*inputSize:(j+1)*inputSize], weights[i][j])
+			}
+			inf.FlatWeights[i] = flat
+		}
+	}
+
+}
+
+func (model *Model) SetInferenceMode(enabled bool) {
+	model.inferenceMode = enabled
+
+	if enabled {
+		model.initializeInferenceBuffer()
+	} else if model.InferenceState != nil {
+		model.InferenceState.InferenceBuffer = nil
+		model.InferenceState.FlatWeights = nil
+	}
+
 }
 
 // AddLayer adds a hidden layer to the neural network

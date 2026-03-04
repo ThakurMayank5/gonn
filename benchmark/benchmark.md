@@ -4,6 +4,8 @@
 
 ```bash
 
-go test ./benchmark/ -run='^$' -bench='.' -benchmem -benchtime=1s -count=1
+go test ./benchmark/ -run='^$' -bench='.' -benchmem -benchtime=1s -count=1 -v
+
+go test ./benchmark/ -run='^$' -bench='BenchmarkDenseForward' -benchmem -benchtime=3s -count=3 -v
 
 ```

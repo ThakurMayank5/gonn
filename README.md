@@ -348,7 +348,34 @@ train, test, err := dataset.SplitWithoutShuffle(data, 0.8)  // sequential split
 | `EarlyStopping`         | `bool`         | false   | Enable early stopping                                                        |
 | `EarlyStoppingPatience` | `int`          | —       | Epochs before early stop triggers                                            |
 
----
+## Inference Performance
+
+GoNN provides an optimized inference mode with preallocated buffers, 8-wide loop unrolling, flat weight access, and zero allocations per call.
+
+Benchmark: single-sample forward pass  
+Architecture: `784 → 128 → 64 → 10` (ReLU, Softmax)  
+Precision: float64, CPU, single-threaded
+
+| Framework                 |    µs/op |   vs GoNN | Notes                                             |
+| ------------------------- | -------: | --------: | ------------------------------------------------- |
+| NumPy (MKL/OpenBLAS)      |     17.1 |     0.53× | Uses highly optimized BLAS kernels (AVX2/AVX-512) |
+| **GoNN**                  | **32.2** | **1.00×** | **Pure Go implementation, zero allocations**      |
+| PyTorch                   |     32.5 |     1.01× | `inference_mode()`, MKL backend                   |
+| TensorFlow `@tf.function` |    266.1 |     8.27× | Graph-compiled execution                          |
+
+**Setup**
+
+- CPU: Intel i7-13650HX
+- Go 1.25
+- 50k benchmark iterations (`go test -bench`)
+- All frameworks pinned to **1 thread** and **float64 precision**
+
+GoNN achieves **PyTorch-level latency for single-sample CPU inference** while remaining a **pure Go implementation with no external dependencies**. NumPy performs best due to its use of highly optimized BLAS libraries.
+
+```go
+model.SetInferenceMode(true)
+output, _ := model.Predict(input)
+```
 
 ## Project Structure
 

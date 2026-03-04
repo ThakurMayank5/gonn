@@ -27,7 +27,7 @@ func (model *Model) Evaluate(dataset dataset.Dataset) (float64, error) {
 
 	for i := range dataset.Inputs {
 		input := dataset.Inputs[i]
-		output, err := model.NeuralNetwork.Predict(input)
+		output, err := model.NeuralNetwork.predict(input)
 		if err != nil {
 			fmt.Printf("Error predicting output for input %v: %v\n", input, err)
 			return 0.0, err

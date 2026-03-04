@@ -7,7 +7,7 @@ import (
 	vectors "github.com/ThakurMayank5/gonn/vectors"
 )
 
-func (nn *NeuralNetwork) Predict(input []float64) ([]float64, error) {
+func (nn *NeuralNetwork) predict(input []float64) ([]float64, error) {
 
 	weights := nn.WeightsAndBiases.Weights
 	biases := nn.WeightsAndBiases.Biases
@@ -15,7 +15,7 @@ func (nn *NeuralNetwork) Predict(input []float64) ([]float64, error) {
 	x := input
 
 	// Iterate through each layer
-	for i := 0; i < len(weights); i++ {
+	for i := range weights {
 		{
 
 			// Default to ReLU for hidden layers

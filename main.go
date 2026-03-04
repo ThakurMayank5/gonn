@@ -178,6 +178,9 @@ func main() {
 	}
 
 	err = loadedModel.LoadWeights("fashion_mnist.weights")
+
+	loadedModel.SetInferenceMode(true)
+
 	if err != nil {
 		fmt.Println("Error loading weights:", err)
 		return
@@ -212,7 +215,7 @@ func main() {
 			continue
 		}
 
-		prediction, err := loadedModel.NeuralNetwork.Predict(test.Inputs[i])
+		prediction, err := loadedModel.Predict(test.Inputs[i])
 		if err != nil {
 			continue
 		}
