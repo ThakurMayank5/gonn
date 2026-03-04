@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/ThakurMayank5/gonn/onnx"
@@ -19,11 +20,13 @@ func TestONNXModelLoading(t *testing.T) {
 
 	}
 
-	// if model == nil {
-	// 	t.Fatalf("Model is nil after loading ONNX model")
-	// }
-
 	model.NeuralNetwork.Summary()
 
-}
+	model.SetInferenceMode(true)
 
+	output, err := model.Predict([]float64{0.5, 0.2, 0.1, 0.4})
+	if err != nil {
+		t.Fatalf("Failed to predict: %v", err)
+	}
+	fmt.Printf("Prediction output: %v\n", output)
+}
