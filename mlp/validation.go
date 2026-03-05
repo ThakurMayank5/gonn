@@ -1,4 +1,4 @@
-package neuralnetwork
+package mlp
 
 import "github.com/ThakurMayank5/gonn/losses"
 

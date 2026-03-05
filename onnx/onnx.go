@@ -6,7 +6,7 @@ import (
 	"math"
 	"os"
 
-	nn "github.com/ThakurMayank5/gonn/neuralnetwork"
+	nn "github.com/ThakurMayank5/gonn/mlp"
 
 	"google.golang.org/protobuf/proto"
 )

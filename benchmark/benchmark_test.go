@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ThakurMayank5/gonn/activation"
-	nn "github.com/ThakurMayank5/gonn/neuralnetwork"
+	nn "github.com/ThakurMayank5/gonn/mlp"
 )
 
 func setupModel() *nn.Model {

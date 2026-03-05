@@ -1,4 +1,4 @@
-package neuralnetwork
+package mlp
 
 import (
 	"encoding/gob"

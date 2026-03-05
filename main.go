@@ -6,7 +6,7 @@ import (
 	activ "github.com/ThakurMayank5/gonn/activation"
 	"github.com/ThakurMayank5/gonn/dataloader"
 	"github.com/ThakurMayank5/gonn/dataset"
-	nn "github.com/ThakurMayank5/gonn/neuralnetwork"
+	nn "github.com/ThakurMayank5/gonn/mlp"
 )
 
 // Fashion MNIST class labels (index matches one-hot position)
