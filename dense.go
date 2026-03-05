@@ -14,7 +14,7 @@ type DenseLayer struct {
 	// shape of weights is (output_size, input_size)
 	Weights tensor.Tensor
 
-	// shape of bias is (output_size, 1)
+	// shape of bias is (output_size)
 	Bias tensor.Tensor
 
 	DropoutRate float64
@@ -30,15 +30,15 @@ func (d *DenseLayer) Init() {
 
 	switch d.Initializer {
 	case KaimingNormalInitializer:
-		d.Weights.Data = KaimingNormal(fanIn, fanOut)
+		d.Weights.Data = KaimingNormal(fanIn, fanOut, d.Weights.Shape[0]*d.Weights.Shape[1])
 	case KaimingUniformInitializer:
-		d.Weights.Data = KaimingUniform(fanIn, fanOut)
+		d.Weights.Data = KaimingUniform(fanIn, fanOut, d.Weights.Shape[0]*d.Weights.Shape[1])
 	case XavierNormalInitializer:
-		d.Weights.Data = XavierNormal(fanIn, fanOut)
+		d.Weights.Data = XavierNormal(fanIn, fanOut, d.Weights.Shape[0]*d.Weights.Shape[1])
 	case XavierUniformInitializer:
-		d.Weights.Data = XavierUniform(fanIn, fanOut)
+		d.Weights.Data = XavierUniform(fanIn, fanOut, d.Weights.Shape[0]*d.Weights.Shape[1])
 	default:
-		d.Weights.Data = KaimingNormal(fanIn, fanOut)
+		d.Weights.Data = KaimingNormal(fanIn, fanOut, d.Weights.Shape[0]*d.Weights.Shape[1])
 	}
 
 	// Initialize bias to zeros
@@ -62,24 +62,22 @@ x    	*   w
 
 func (d *DenseLayer) Forward(x tensor.Tensor) tensor.Tensor {
 
-	fmt.Println("Dense Layer Forward Pass:")
-	fmt.Printf(" Input: %v\n", x.Data)
-	fmt.Printf(" Weights: %v\n", d.Weights.Data)
-	fmt.Printf(" Bias: %v\n", d.Bias.Data)
-
 	z := make([]float64, d.Neurons)
 
 	for i := 0; i < d.Neurons; i++ {
 
 		zx := 0.0
-		for j := 0; j < d.Weights.Shape[1]; j++ {
+		for j := 0; j < x.Shape[0]; j++ {
 
-			zx += d.Weights.Data[i*d.Weights.Shape[1]+j] * x.Data[j]
+			zx += d.Weights.Data[i*x.Shape[0]+j] * x.Data[j]
 
 		}
 		z[i] = zx + d.Bias.Data[i]
 
 	}
+
+	fmt.Printf(" Output: %v\n", z)
+	fmt.Printf(" Output Shape: %v\n", []int{d.Neurons, 1})
 
 	return tensor.Tensor{
 		Data:  z,

@@ -26,6 +26,10 @@ func ReLU() Layer {
 	return &ReLULayer{}
 }
 
+func SoftMax() Layer {
+	return &SoftMaxLayer{}
+}
+
 func Flatten() Layer {
 	return &FlattenLayer{}
 }
