@@ -11,7 +11,7 @@ func TestONNXModelLoading(t *testing.T) {
 
 	onnxModelPath := "../onnx-models/mlp.onnx"
 
-	model, err := onnx.LoadONNXModel(onnxModelPath)
+	model, err := onnx.LoadONNXMLPModel(onnxModelPath)
 
 	t.Logf("Loaded ONNX model from %s", onnxModelPath)
 

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func LoadONNXModel(filePath string) (*nn.Model, error) {
+func LoadONNXMLPModel(filePath string) (*nn.Model, error) {
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {

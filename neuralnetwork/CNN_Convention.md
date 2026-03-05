@@ -1,1 +1,0 @@
-- Tensor is as N, C, H, W
